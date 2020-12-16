@@ -1,0 +1,44 @@
+input = "src/lesson1/pres.md"
+dir = input.split("/")[1]
+file = input.split("/")[-1]
+name =  file[0:-3]
+!mkdir -p {outdir}
+!marp --allow-local-files -o out/{dir} -I src/{dir} --images png
+
+exit
+count = -1
+line = ""
+
+f = open(input, "r")
+
+def copy_image(prefix, image):
+    print("*** copy_image", image)
+    !rm {prefix}png
+    ext = image.split(".")[-1]
+    !cp {image} {prefix}ext.{ext}
+
+def slurp_file(f, prefix, suffix):
+    print("*** slurp_file", suffix)
+    !rm {prefix}png
+    with open(f"{prefix}ext.{suffix}", "w") as out:
+        while True:
+            line = f.readline()
+            if line.rstrip() == '```': return
+            out.write(line)
+            #print(">>>", line)
+
+while True:
+    line = f.readline()
+    if not line: break
+    line = line.rstrip()
+    if line == "---":
+        count +=1
+        prefix = f"out/{dir}/{name}.%03d." % count
+        #print(prefix)
+        line = f.readline()
+        if not line: break
+        line = line.rstrip()
+        if line.startswith("![]("):
+            copy_image(prefix, f"src/{dir}/{line[4:-1]}")
+        if line.startswith('```'):
+            slurp_file(f, prefix, line[3:])
