@@ -3,3 +3,4 @@ function main(args) {
         "body": "Hi, "+ (args.name || "world")
     }
 }
+

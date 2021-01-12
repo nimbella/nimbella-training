@@ -18,10 +18,34 @@ https://www.nimbella.com
 ---
 # Plan
 
-- signup with nimbella
-- creating an action with FAAS Wars
-- installing using the `nim` cli
-- checking activation logs and results
+- Setup
+    - signup with nimbella
+    - installing using the `nim` cli
+- Actions and Activations
+    - creating an action with FAAS Wars
+    - checking activation logs and results
+- Triggers and Rules
+    - a sample using slack
+
+---
+# Nimbella in a nutshell
+
+- Serveless Development Platform
+- Cloud-Native made easy
+- Microservice architecture
+- Awesome developer experience
+- Multi-cloud and "in your cloud"
+
+---
+# Nimbella vs Kubernetes vs Cloud
+
+![](img/0a-nimbella.png)
+
+---
+![](img/0c-compare.png)
+
+---
+![](img/0b-architecture.png)
 
 ---
 ![](img/1-setup.png)
@@ -32,7 +56,31 @@ https://www.nimbella.com
 ![](img/3-install-nimcli.png)
 
 ---
-!![](img/4-faaswars.png)
+# Login
+
+- `nim auth login`
+open the browser and log into your github account
+
+- `nim auth current`
+show your namespace
+
+- `nim namespace get`
+show what you have in the namespace
+
+- `nim namespace clean`
+cleaning your namespace
+
+---
+![](img/4-faaswars.png)
+
+---
+```sh
+nim auth login
+nim auth list
+nim auth current
+nim namespace get
+nim namespace clean
+```
 
 ---
 # Inspecting Actions
@@ -65,20 +113,6 @@ can be repeated multiple times
 you need a file in json format
 
 ---
-# Action invocation with `curl` 
-
-## only for web actions!
-
-- `--web true`  
-  - web public it is the default with `nim`
-  - **not** all the actions are web public
-
-## use url-encoded parameters
-
-- `curl -X GET <url>?event=hit`
-- `curl -X POST -d  event=hit <url>`
-
----
 ```sh
 # Invoking an action with parameters
 
@@ -94,10 +128,25 @@ nim action invoke Jedi -P args.json
 ```
 
 ---
+# Action invocation with `curl` 
+
+## only for web actions!
+
+- `--web true`  
+  - web public it is the default with `nim`
+  - **not** all the actions are web public
+
+## use url-encoded parameters
+
+- `curl -X GET <url>?event=hit`
+- `curl -X POST -d  event=hit <url>`
+
+---
 ```sh
 # Using Curl  for web actions
 
 URL=$(nim action get Jedi --url)
+echo $URL
 
 # use GET and url parameters
 
@@ -105,7 +154,7 @@ curl "$URL?event=hit"
 
 ## use POST and form data (url-encoded)
 
-curl -X POST -d event=hit "$URL"
+curl -X POST -d event=enemy-spot "$URL"
 ```
 
 ---
@@ -113,18 +162,20 @@ curl -X POST -d event=hit "$URL"
 
 - `nim action update <name> <file>`
    - works also if the action does not exists
-   - some people only use `update`
+   - some people only uses `update`
 
 ---
 ```js
 /*
 nim action update Jedi jedi.js
+nim action invoke Jedi
 */
 function main(args) {
     console.log(args.event)
-    return body: [
-        {"turn_turret_left": 15, "shoot": true}
-    ]
+    return { body: [
+        {"turn_turret_left": 15, 
+         "shoot": true}
+    ]}
 }
 ```
 
@@ -159,6 +210,8 @@ nim activation result
 ---
 # Managing Packages
 
+## package = "collection of actions"
+
 - `nim package create greetings`
 create a package
 
@@ -171,12 +224,17 @@ remove package and all its actions
 ---
 ```sh
 # create package with 2 actions
+nim package list
+nim action list
 nim package create greetings
 nim action create greetings/hello hello.js
 nim action create greetings/hi hi.js
+# check and clean
+nim package list
 nim action list
 nim package delete greetings
 nim package delete greetings -r
+nim package list
 nim action list
 ```
 
@@ -184,9 +242,11 @@ nim action list
 # Package variables
 
 - `nim package update -p name Mike`
+- available to all actions in package
 
-## available to all actions
+# Action variables
 
+- `nim action update -p name Mike`
 - useful to share configurations
 - action variables overrides package variables
 
@@ -194,7 +254,9 @@ nim action list
 ```sh
 # create package without variables
 nim package create greetings
+cat hello.js
 nim action create greetings/hello hello.js
+cat hi.js
 nim action create greetings/hi hi.js
 
 # no variables, default
@@ -216,7 +278,7 @@ nim action invoke greetings/hi
 ```
 
 ---
-# Shared Packages in namespace `whisk-system`
+# Shared Packages in `whisk-system`
 
 -  you can share your package with others:
 `nim action create <package> --shared=yes`
@@ -227,6 +289,13 @@ nim action invoke greetings/hi
 ![](img/7-shared.png)
 
 ---
+```sh
+nim package list /whisk-system
+nim action list /whisk-system/alarms
+nim action get /whisk-system/alarms/interval
+```
+
+---
 # Example: a "slack" notification action
 
 1. Creating a slack URL
@@ -234,13 +303,12 @@ nim action invoke greetings/hi
 1. Writing messages in the url with an action
 1. Profit!
 
-
 ---
 ![](img/9-slackurl.png)
 
-
 ---
 ```sh
+# opening slack
 source $HOME/.ssh/secret.sh
 curl -X POST -d '{"text": "Hello"}' $NOTIFICATIONS
 curl -X POST -d '{"text": "How are you"}' $NOTIFICATIONS
@@ -248,13 +316,12 @@ curl -X POST -d '{"text": "How are you"}' $NOTIFICATIONS
 
 ---
 ```js
+// notify.js
 const axios = require('axios').default;
 
 function main(args) {
-    let prefix = args.prefix || ""
-    let text = args.text || (args.parameters && args.parameters[0].value) || "empty message"
     return axios.post(args.notifications, {
-        text: prefix + text
+        text: args.text
     }).then(r => {
         return {
             "body": r.data
@@ -267,10 +334,10 @@ function main(args) {
 ```sh
 
 # Notifications
-nim package update checker -p notifications $NOTIFICATIONS
-nim action update checker/notify notify.js
-nim action invoke checker/notify -p text hello
-nim action invoke checker/notify -p text hi
+nim package update slack -p notifications $NOTIFICATIONS
+nim action update slack/notify notify.js
+nim action invoke slack/notify -p text hello
+nim action invoke slack/notify -p text hi
 ```
 
 ---
@@ -280,52 +347,129 @@ nim action invoke checker/notify -p text hi
 
 
 ---
-# Creating a trigger and rules
+# Creating a trigger
 
 - `nim trigger create <name>`
 create a trigger with the given `<name>`
 
-- `nim rule create <name> <trigger> <action>`
-create a rule `<name>` to invoke the `<action>` when firing `<trigger>`
-
--  `nim rule enable <name>`
-`nim rule disable <name>``
-enable or disable rules
-
 - `nim trigger fire <name> <parameters>`
 fire a trigger with parameters
+  
+- `<parameters>`:
+  - `-p <name> <value>...`
+  - `-P <file>.json`
 
 ---
-```sh
-nim trigger create slack
-nim action update checker/first notify.js -p prefix '[first] '
-nim rule create slack-first slack checker/first
-nim rule enable slack-first
-nim trigger fire slack -p text from-trigger-1
+# Creating and enabling rules
+
+- `nim rule create <name> <trigger> <action>`
+  - create a rule `<name>` 
+  - ...to invoke the `<action>` 
+  - ... when firing the `<trigger>`
+
+-  `nim rule enable <name>`
+`nim rule disable <name>`
+enable or disable rules
+
+---
+```js
+// echo.js
+function main(args) {
+    console.log(args)
+    return args
+}
 ```
 
 ---
 ```sh
-nim action update checker/second notify.js -p prefix '[second] '
-nim rule create slack-second slack checker/second
-nim rule enable slack-second
-nim trigger fire slack -p text from-trigger-2
-nim rule disable slack-first
-nim trigger fire slack -p text from-trigger-3
+# inspecting trigger invocation
+nim trigger create echoer
+nim action create echo echo.js
+nim rule create echoer-echo echoer echo
+nim trigger fire echoer -p hello world
+nim activation logs
+nim activation result
 ```
 
+---
+```js
+// notify2.js
+// prefixed message
+// parameters from trigger
+const axios = require('axios').default;
+
+function main(args) {
+    let prefix = args.prefix || ""
+    let text = args.parameters[0].value
+    return axios.post(args.notifications, {
+        text: prefix + text
+    }).then(r => {
+        return {
+            "body": r.data
+        }
+    })
+}
+```
 
 ---
 ```sh
+nim trigger create slacker
+nim action update slack/first notify2.js -p prefix '[first] '
+nim rule create slacker-first slacker slack/first
+nim rule enable slacker-first
+nim trigger fire slacker -p text from-trigger-1
+```
+
+---
+```sh
+nim action update slack/second notify2.js -p prefix '[second] '
+nim rule create slacker-second slacker slack/second
+nim rule enable slacker-second
+nim trigger fire slacker -p text from-trigger-2
+nim rule disable slacker-first
+nim trigger fire slacker -p text from-trigger-3
+```
+
+---
+# Feed
+- a feed is a sorce of events for a trigger
+  - it will fire when an event occurs
+
+## Alarms
+
+- predefined Nimbella feed 
+- generate periodically trigger invocations
+
+- `nim trigger create every-minute \` 
+`--feed /whisk-system/alarms/interval -p minutes 1`
+
+---
+```sh
+# Inspecting packages
 nim package list /whisk-system/
 nim action list /whisk-system/alarms
 nim action get /whisk-system/alarms/interval
 ```
 
 ---
+```js
+const axios = require('axios').default;
+
+function main(args) {
+    let text = new Date().toISOString()
+    return axios.post(args.notifications, {
+        text: text
+    }).then(r => {
+        return {
+            "body": r.data
+        }
+    })
+}
+```
+---
 ```sh
-nim trigger create every-minute --feed /whisk-system/alarms/interval -p minutes 1
-nim action update checker/tick tick.js
-nim rule create every-minute-tick every-minute checker/tick
-nim rule enable every-minute-tick
+nim trigger create ticker --feed /whisk-system/alarms/interval -p minutes 1
+nim action update slack/tick tick.js
+nim rule create ticker-tick ticker slack/tick
+nim rule enable ticker-tick
 ```
