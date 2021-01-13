@@ -16,6 +16,12 @@ Jump Start with Nimbella
 https://www.nimbella.com
 
 ---
+# Requirement for Certification
+
+- complete the exercise
+- complete a final online survey
+
+---
 # Plan
 
 - Setup
@@ -26,6 +32,7 @@ https://www.nimbella.com
     - checking activation logs and results
 - Triggers and Rules
     - a sample using slack
+    - timed execution
 
 ---
 # Nimbella in a nutshell
@@ -71,9 +78,6 @@ show what you have in the namespace
 cleaning your namespace
 
 ---
-![](img/4-faaswars.png)
-
----
 ```sh
 nim auth login
 nim auth list
@@ -81,6 +85,9 @@ nim auth current
 nim namespace get
 nim namespace clean
 ```
+
+---
+![](img/4-faaswars.png)
 
 ---
 # Inspecting Actions
@@ -473,3 +480,11 @@ nim action update slack/tick tick.js
 nim rule create ticker-tick ticker slack/tick
 nim rule enable ticker-tick
 ```
+
+---
+# Exercise for certification
+
+- create a web site monitor
+  - checks if a site is up and running
+  - notifies in slack if something is wrong
+  - it is executed every minute
