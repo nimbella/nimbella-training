@@ -1,0 +1,38 @@
+[
+  {
+    "apihost": "https://apigcp.nimbella.io",
+    "namespace": "msciabgm-3h6qwxvwpw2",
+    "packageVersions": {
+      "addr": {
+        "version": "0.0.33",
+        "digest": "e9c575b3e3cd82425ef5b58865520546ea4428b098850aaf643c4a4907b59cf8"
+      }
+    },
+    "actionVersions": {
+      "addr/all": {
+        "version": "0.0.22",
+        "digest": "7172f3e9a734f94c767a2cf927d973be5e52fa24ff85556271a3a9b6705ea095"
+      },
+      "addr/del": {
+        "version": "0.0.28",
+        "digest": "a0ec83f1837b70b94f47ad8b72b1af496935b14446d5f983dea11a882f9467cc"
+      },
+      "addr/get": {
+        "version": "0.0.35",
+        "digest": "f1bdc3133fd2e5af0a6d0fffb33b5227dd99ff68d2eb4cae2ccc1b793e6ae6b5"
+      },
+      "addr/set": {
+        "version": "0.0.36",
+        "digest": "c3de8b9d8dae7fd97282ccebd1a926eb1be0ff52fe049060c8139e4a58ab43c8"
+      }
+    },
+    "webHashes": {
+      "web/public/favicon.png": "2bfc7b638269b3a8e5f6502d71a0b8901089910dd80ede8396bdc590f1302017",
+      "web/public/global.css": "7359eecc69b1deef08bfddba4e1333a49a923db61cc709471b8d121ca7af3051",
+      "web/public/index.html": "0ea522dedead692275e2daaf54250a9a61efbe80e8622363c2436d63ae0f4084",
+      "web/public/build/bundle.css": "1ab8bc58fa2d3e658673da5763eab2497ed33270d3817505c88c86e343947f35",
+      "web/public/build/bundle.js": "caad5281df92de485db126fdfd5cc0ec61a4cd76f67ebb95b24a8d7b1f2ba21d",
+      "web/public/build/bundle.js.map": "4ea69fc8b4a7a3a08e73c54b5a1c1ec0c59c619baeb7c09c524b0d52ea445251"
+    }
+  }
+]
