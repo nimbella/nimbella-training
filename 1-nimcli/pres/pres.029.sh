@@ -1,4 +1,4 @@
-# override package variable
+# override package variables
 nim package update greetings -p name Mike
 nim action invoke greetings/hello
 nim action invoke greetings/hi

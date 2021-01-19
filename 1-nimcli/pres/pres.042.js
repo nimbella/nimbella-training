@@ -1,6 +1,5 @@
 // notify2.js
-// prefixed message
-// parameters from trigger
+// prefixed message, parameters from trigger
 const axios = require('axios').default;
 
 function main(args) {

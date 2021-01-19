@@ -18,8 +18,11 @@ https://www.nimbella.com
 ---
 # Requirement for Certification
 
-- complete the exercise
+- complete the exercises
+  - to be delivered at the end
 - complete a final online survey
+  - link delivered at the course completion
+
 
 ---
 # Plan
@@ -46,16 +49,16 @@ https://www.nimbella.com
 ---
 # Nimbella vs Kubernetes vs Cloud
 
-![](img/0a-nimbella.png)
+![bg fit](img/0a-nimbella.png)
 
 ---
-![](img/0c-compare.png)
+![bg](img/0c-compare.png)
 
 ---
-![](img/0b-architecture.png)
+![bg fit](img/0b-architecture.png)
 
 ---
-![](img/1-setup.png)
+![bg fit](img/1-setup.png)
 
 ---
 # Install nim cli
@@ -78,7 +81,9 @@ show what you have in the namespace
 cleaning your namespace
 
 ---
+# <!--!--> Authentication
 ```sh
+# authentication
 nim auth login
 nim auth list
 nim auth current
@@ -100,6 +105,7 @@ get informations about an action
 get the public url of an action
 
 ---
+# <!--!--> Inspecting the action
 ```sh
 # Inspecting the action
 nim action list
@@ -120,16 +126,15 @@ can be repeated multiple times
 you need a file in json format
 
 ---
+# <!--!--> Invoking an action with parameters
 ```sh
 # Invoking an action with parameters
-
 nim action invoke Jedi -p event idle
 nim action invoke Jedi -p event hit
 nim action invoke Jedi -p event enemy-spot
 nim action invoke Jedi -p event wall-collide
 
 # invoking an action with json
-
 echo '{ "event": "idle"}' >args.json
 nim action invoke Jedi -P args.json
 ```
@@ -149,6 +154,7 @@ nim action invoke Jedi -P args.json
 - `curl -X POST -d  event=hit <url>`
 
 ---
+# <!--!--> Using `curl` for web actions
 ```sh
 # Using Curl  for web actions
 
@@ -172,11 +178,8 @@ curl -X POST -d event=enemy-spot "$URL"
    - some people only uses `update`
 
 ---
+# <!--!--> Simple Action
 ```js
-/*
-nim action update Jedi jedi.js
-nim action invoke Jedi
-*/
 function main(args) {
     console.log(args.event)
     return { body: [
@@ -184,6 +187,10 @@ function main(args) {
          "shoot": true}
     ]}
 }
+/*
+nim action update Jedi jedi.js
+nim action invoke Jedi
+*/
 ```
 
 ---
@@ -199,7 +206,9 @@ show logs of an activation
 show logs of an activation
 
 ---
+# <!--!--> Activations
 ```sh
+# Activations
 nim activation list
 nim action invoke Jedi -p event idle
 nim activation list --limit 3
@@ -225,10 +234,11 @@ create a package
 - `nim action create greetings/hello hello.js`
 create an action in the package
 
-- `nim action remove greetings -r`
+- `nim action delete greetings -r`
 remove package and all its actions
 
 ---
+# <!--!--> Create package with 2 actions
 ```sh
 # create package with 2 actions
 nim package list
@@ -248,16 +258,17 @@ nim action list
 ---
 # Package variables
 
-- `nim package update -p name Mike`
+- `nim package update <package> -p name Mike`
 - available to all actions in package
 
 # Action variables
 
-- `nim action update -p name Mike`
+- `nim action update <action> -p name Mike`
 - useful to share configurations
 - action variables overrides package variables
 
 ---
+# <!--!--> Create package without variables
 ```sh
 # create package without variables
 nim package create greetings
@@ -272,8 +283,9 @@ nim action invoke greetings/hi
 ```
 
 ---
+# <!--!--> Override variables
 ```sh
-# override package variable
+# override package variables
 nim package update greetings -p name Mike
 nim action invoke greetings/hello
 nim action invoke greetings/hi
@@ -296,7 +308,9 @@ nim action invoke greetings/hi
 ![](img/7-shared.png)
 
 ---
+# <!--!--> Inspect `whisk-system`
 ```sh
+# inspect whisk-system
 nim package list /whisk-system
 nim action list /whisk-system/alarms
 nim action get /whisk-system/alarms/interval
@@ -314,14 +328,16 @@ nim action get /whisk-system/alarms/interval
 ![](img/9-slackurl.png)
 
 ---
+# <!--!--> Writing in Slack
 ```sh
-# opening slack
+# writing in  slack
 source $HOME/.ssh/secret.sh
 curl -X POST -d '{"text": "Hello"}' $NOTIFICATIONS
 curl -X POST -d '{"text": "How are you"}' $NOTIFICATIONS
 ```
 
 ---
+# <!--!--> `notify.js`
 ```js
 // notify.js
 const axios = require('axios').default;
@@ -338,9 +354,9 @@ function main(args) {
 ```
 
 ---
+# <!--!--> Notifications
 ```sh
-
-# Notifications
+# notifications
 nim package update slack -p notifications $NOTIFICATIONS
 nim action update slack/notify notify.js
 nim action invoke slack/notify -p text hello
@@ -348,10 +364,7 @@ nim action invoke slack/notify -p text hi
 ```
 
 ---
-### Triggers and Rules
-
-![](img/8-trigrul.png)
-
+![bg fit](img/8-trigrul.png)
 
 ---
 # Creating a trigger
@@ -379,6 +392,7 @@ fire a trigger with parameters
 enable or disable rules
 
 ---
+# <!--!--> `echo.js`
 ```js
 // echo.js
 function main(args) {
@@ -388,6 +402,7 @@ function main(args) {
 ```
 
 ---
+# <!--!--> Inspecting Trigger Invocation
 ```sh
 # inspecting trigger invocation
 nim trigger create echoer
@@ -399,10 +414,10 @@ nim activation result
 ```
 
 ---
+# <!--!--> `notify2.js`
 ```js
 // notify2.js
-// prefixed message
-// parameters from trigger
+// prefixed message, parameters from trigger
 const axios = require('axios').default;
 
 function main(args) {
@@ -419,7 +434,9 @@ function main(args) {
 ```
 
 ---
+# <!--!--> A trigger with 2 actions, first
 ```sh
+# create two actions with different prefixes
 nim trigger create slacker
 nim action update slack/first notify2.js -p prefix '[first] '
 nim rule create slacker-first slacker slack/first
@@ -428,6 +445,7 @@ nim trigger fire slacker -p text from-trigger-1
 ```
 
 ---
+# <!--!--> A trigger with 2 actions, second
 ```sh
 nim action update slack/second notify2.js -p prefix '[second] '
 nim rule create slacker-second slacker slack/second
@@ -451,6 +469,7 @@ nim trigger fire slacker -p text from-trigger-3
 `--feed /whisk-system/alarms/interval -p minutes 1`
 
 ---
+# <!--!--> Checking parameters
 ```sh
 # Inspecting packages
 nim package list /whisk-system/
@@ -459,7 +478,9 @@ nim action get /whisk-system/alarms/interval
 ```
 
 ---
+# <!--!--> `tick.js`
 ```js
+// tick.js
 const axios = require('axios').default;
 
 function main(args) {
@@ -473,8 +494,11 @@ function main(args) {
     })
 }
 ```
+
 ---
+# <!--!--> Enable Ticker
 ```sh
+# enable ticker
 nim trigger create ticker --feed /whisk-system/alarms/interval -p minutes 1
 nim action update slack/tick tick.js
 nim rule create ticker-tick ticker slack/tick

@@ -1,7 +1,3 @@
-/*
-nim action update Jedi jedi.js
-nim action invoke Jedi
-*/
 function main(args) {
     console.log(args.event)
     return { body: [
@@ -9,3 +5,7 @@ function main(args) {
          "shoot": true}
     ]}
 }
+/*
+nim action update Jedi jedi.js
+nim action invoke Jedi
+*/

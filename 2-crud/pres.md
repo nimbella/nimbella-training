@@ -19,11 +19,12 @@ https://www.nimbella.com
 # Plan
 
 - create a nimbella project
+  - use jquery and bootstrap
   - sample: "secret" message encoder
 - web project with framework
   - use redis for storage
   - use svelte for front-end
-  - sample: a "crud"
+  - sample: a "crud" application
 
 ---
 # A Nimbella project
@@ -36,37 +37,43 @@ https://www.nimbella.com
 - Managed with `nim`
 
 ---
-# Deploy-by-convention
+# Conventions over configurations
 
 - Actions are in `packages` folder
-- Subfolders are packages
-- Use "default" for "no-prefix" actions
+  - Subfolders are packages
+  - Use "default" for "no package" actions
 - A single file with extension determine the actions
+  - It can also be a directory
 - Deploy with `nim project deploy <project-dir>`
 
 ---
-# An example: 'secret' message encoder
+# Example: 'secret' message encoder
 
-- backend action encoding a messages 
-- front end action 
-- using jquery
+![bg right:40% 80%](img/1-binaryencoder.png)
+
+Translate a "plain text message" in binary numbers.
+
+- backend action 
+  - encode the messages 
+- front end action
+  - render the message
+- uses jquery for ajax and bindings
 
 ---
+# <!--!--> Convert text in binary string 
 ```js
-// convert binary
+// Convert text in binary string 
 function main(args) {
     let text = args.text || ""
-    let res =  text.split("").map(function (x) {
+    let res =  text.split("").map(
+      function (x) {
         return x.charCodeAt(0).toString(2)
-    })
+      }
+    )
     return { 
         "body": res.join("\n")
     }
 }
-/*
-mkdir -p encoder/packages/default
-micro encoder/packages/default/binary.js
-*/
 ```
 
 ---
@@ -75,25 +82,29 @@ micro encoder/packages/default/binary.js
 - Recommended practice before publishing
 - With node.js:
     - start `node`
-    - `eval(require("fs").readFileSync(<file?>, 'utf-8'))`
+    - `eval(require("fs").readFileSync(<file>, 'utf-8'))`
     - invoke `main(<args>)`
 
 - Recommended: write "unit tests"
   - for example with `jest`
 
 ---
+# <!--!--> Testing locally the binary action
 ```sh
-# testing locally
+# testing locally the binary action
 node
 eval(require("fs").readFileSync("encoder/packages/default/binary.js", 'utf-8'))
 main({"text":"hello"})
+main({})
 ```
 
 ---
+# <!--!--> Deploy encoder
 ```sh
-mkdir -p project/packages/default
-cp src/binary.js project/packages/default
-nim project deploy project
+# deploy encoder
+mkdir -p encoder/packages/default
+cp src/binary.js encoder/packages/default
+nim project deploy encoder
 nim action invoke binary -p text hello
 ```
 
@@ -105,6 +116,7 @@ nim action invoke binary -p text hello
 - actions accessible with `/api` prefix
 
 ---
+# <!--!--> Encoder User Interface
 ```html
 <!DOCTYPE html>
 <html>
@@ -113,19 +125,18 @@ nim action invoke binary -p text hello
     <script src="https://code.jquery.com/jquery-3.3.1.min.js" ></script>
 </head>
 <body>
+  <div class="container">
     <h1>Binary Encoder</h1>
     <input type="text" id="input">
     <pre id="output"></pre>
-    <script src="index.js" ></script>
+  </div>
+  <script src="index.js" ></script>
 </body>
 </html>
-<!-- 
-mkdir -p encoder/web
-micro encoder/web/index.html
--->
 ```
 
 ---
+# <!--!--> Encoder Logic
 ```js
 $("#input").keyup(function () {
     $.post("/api/default/binary", 
@@ -137,52 +148,43 @@ $("#input").keyup(function () {
       }
     )
 })
-/*
-micro encoder/web/index.js
-*/
 ```
+
 ---
+# <!--!--> Deploy web content
 ```sh
+# deploy web content
 find encoder
+mkdir -p encoder/web
+cp src/index.html encoder/web
+cp src/index.js encoder/web
 nim project deploy encoder
 ```
 
 ---
 # Local Development
 
-# Problems:
-- Not everything works opening a page
+## Common Problems:
+- Not everything works without a web server
 - CORS! Requests require same origin
 
-# Solution
-- use a local web server
-- setup a proxy to Nimbella API
+## Solution:
+- use a local web server and setup a proxy to Nimbella API
+`http-server encoder/web 
+--proxy https://$(nim auth current)-apigcp.nimbella.io`
 
 ---
+# <!--!--> Install and run local server
 ```sh
+# install and run local server
 npm install -g http-server
 http-server encoder/web --proxy https://$(nim auth current)-apigcp.nimbella.io
-# open new tab
-micro encoder/web/index.html
+# in another terminal
+vi encoder/web/index.html
 ```
 
 ---
-```html
-  <script src="https://code.jquery.com/jquery-3.3.1.min.js" ></script>
-  </head>
-  <body>
-+ <div class="container">
-    <h1>Binary Encoder</h1>
-    <input type="text" id="input">
-    <pre id="output"></pre>
-+ </div>
-  <script src="index.js" ></script>
-  </body>
-  </html>
-```
-
----
-# `project deploy` Options
+# Options for `project deploy` 
 
 - use `--incremental` to deploy only changes
 - use `--exclude=<path>` to exclude directories (or files)
@@ -190,6 +192,20 @@ micro encoder/web/index.html
 ```
 nim project deploy --incremental encoder
 nim project deploy --exclude=web encoder
+```
+
+---
+# <!--!--> Examples of incremental update
+```sh
+## examples of incremental update
+# edit frontend
+vi encoder/web/index.html
+# deploy only changed files
+nim project deploy encoder --incremental
+# edit backend
+vi encoder/packages/default/binary.js
+# deploy excluding web folder
+nim project deploy encoder --exclude=web
 ```
 
 ---
@@ -204,6 +220,7 @@ nim project deploy --exclude=web encoder
   - multiple actions can read and write
 
 ---
+# <!--!--> Set in Redis (v1)
 ```js
 // set.js v1
 function main(args) {
@@ -217,6 +234,7 @@ function main(args) {
 ```
 
 ---
+# <!--!--> Get in Redis (v1)
 ```js
 // get.js v1
 function main(args) {
@@ -229,6 +247,7 @@ function main(args) {
 ```
 
 ---
+# <!--!--> Setup address project
 ```sh
 # setup address project
 mkdir -p address/packages/addr
@@ -239,8 +258,9 @@ nim project deploy address
 ```
 
 ---
+# <!--!--> Testing get/set
 ```sh
-# testing
+# testing get/set
 ## set then get
 nim action invoke addr/set -p key hello -p value world
 nim action invoke addr/get -p key hello
@@ -251,13 +271,24 @@ nim action invoke addr/get -p key hello
 ```
 
 ---
-# Support a field in set
+# <!--!--> Using `nim kv`
+```sh
+# nim kv support
+nim kv
+nim kv list
+nim kv get hello
+nim kv clean
+nim kv list
+```
+
+---
+# Write a record
 
 - `set.js` v2 diff:
 ```
 <     let key = args.key
 <     let value = args.value
----
+===   
 >     let key = "address:"+args.name
 >     let value = JSON.stringify({
 >             "name": args.name || "",
@@ -267,22 +298,22 @@ nim action invoke addr/get -p key hello
 ```
 
 ---
-# Support a field in get
+# Read a record
 
 - `get.js` v2 diff:
 ```
 3c3
 <     let key = args.key
----
+===
 >     let key = "address:"+args.name
 5c5
 <     .then(reply => { return {"body": reply } })
----
+===
 >     .then(reply => { return JSON.parse(reply || "")})
 ```
 
-
 ---
+# <!--!--> `del.js`
 ```js
 // del.js
 function main(args) {
@@ -295,6 +326,7 @@ function main(args) {
 ```
 
 ---
+# <!--!--> Deploy record actions
 ```sh
 # Deploy fixed actions
 cp src/set2.js address/packages/addr/set.js
@@ -305,7 +337,19 @@ nim project deploy address
 ```
 
 ---
+# <!--!--> Test record actions
+```sh
+# Test the actions
+nim action invoke addr/set -p name Michele -p company Nimbella -p phone 392 
+nim action invoke addr/get -p name Michele
+nim action invoke addr/del -p name Michele
+nim action invoke addr/get -p name Michele
+```
+
+---
+# <!--!--> List all records
 ```js
+// loading all the records
 function main() {
     let db = require("@nimbella/sdk").redis()
     return db.keysAsync("address:*")
@@ -323,28 +367,22 @@ function main() {
 ```
 
 ---
-# `all.js` step by step:
+# Dissecting `all.js`:
+
 - `db.keysAsync("address:*").then(reply => ...)`:
-reply= [ 'address:Mirella', 'address:Michele' ]
+reply= `[ 'address:Mirella', 'address:Michele' ]`
 
 - ` db.mgetAsync(reply).then(reply => ... )`:
-reply = [ '{"name":"Mirella","company":"Sciabarra","phone":328}',
-          '{"name":"Michele","company":"Nimbella","phone":392}' ]
+reply = `[ '{"name":"Mirella","company":"Sciabarra","phone":328}',
+'{"name":"Michele","company":"Nimbella","phone":392}' ]`
 
 - `reply.map(['{}', '{"a":1}])` 
-= [{},{"a":1}]
+= `[{},{"a":1}]`
 
 ---
+# <!--!--> Deploy and test `all.js`
 ```sh
-# Test the actions
-nim action invoke addr/set -p name Michele -p company Nimbella -p phone 392 
-nim action invoke addr/get -p name Michele
-nim action invoke addr/del -p name Michele
-nim action invoke addr/get -p name Michele
-```
-
----
-```js
+# add all
 cp src/all.js address/packages/addr/all.js
 nim project deploy address
 nim action invoke addr/all
@@ -355,9 +393,20 @@ curl $(nim action get addr/all --url)
 ```
 
 ---
-# Create a Svelte app
+![bg](img/2-simple-crud.png)
 
-```
+---
+# Create a svelte app
+
+- `npx degit sveltejs/template web`
+uses a template
+- requires some configuration:
+  - `project.yml`
+  - `web/.include`
+
+---
+# <!--!--> Deploy Web Content
+```sh
 cd address
 rm -Rvf web
 npx degit sveltejs/template web
@@ -370,21 +419,27 @@ nim project deploy address
 ---
 # How to use a subfolder
 
-## pick the subfolder `public`:
-
-- `web/.include`:
-```
-public
-```
-# strip one level
-
-- `project.yml`:
+- `project.yml` (strip one level):
 ```
 bucket:
   strip: 1
 ```
 
+- `web/.include` (pick the subfolder `public`):
+```
+public
+```
+
 ---
+# Svelte is "reactive"
+- declare: `let data = ""`
+- use: `{data}`
+- assign: `data = "hello"` 
+  - triggers view update
+- `onMount` executed when view ready
+
+---
+# <!--!--> Load All data
 ```sh
 <script>
   // retrieve data
@@ -397,13 +452,13 @@ bucket:
   // init
   import { onMount } from 'svelte'
   onMount(all)
-
 </script>
 
 <pre>{JSON.stringify(data, null, " ")}</pre>
 ```
 
 ---
+# <!--!--> Deploy and Test v1
 ```sh
 # deploy and test
 cp src/App1.svelte address/web/src/App.svelte
@@ -413,6 +468,18 @@ nim action invoke addr/set -p name Max -p company Gear -p phone 333
 ```
 
 ---
+# Svelte templates
+  - reactive
+    - just update variable
+  - `{#each data as row}`
+    - iterates array assigning to row
+  - `{row.name}`
+    - render value
+  - `{/each}`
+    - closes block
+
+---
+# <!--!--> Adding the table
 ```html
 <table>
   <tr>
@@ -431,9 +498,16 @@ nim action invoke addr/set -p name Max -p company Gear -p phone 333
 ```
 
 ---
+# <!--!--> Deploy v2
+```sh
+cp src/App2.svelte address/web/src/App.svelte
+nim project deploy address
+```
+
+---
+# <!--!--> Form
 ```js
 let form = {}
-
 function add() {
     fetch("/api/addr/set", 
     {
@@ -447,42 +521,84 @@ function add() {
 ```
 
 ---
+# Svelte Bindings
+ - `<input bind:value={form.name}>`
+   - value stored into `form.name`
+
+# Svelte events
+
+ - `<button on:click={add}>Add</button>`
+   - event `click` execute function `add`
+  
+
+---
+# <!--!--> Form HTML
 ```html
 <form>
-  <input placeholder="Name" bind:value={form.name}>
+  <input placeholder="Name" 
+   bind:value={form.name}>
   <br>
-  <input placeholder="Company" bind:value={form.company}>
+  <input placeholder="Company" 
+   bind:value={form.company}>
   <br>
-  <input placeholder="Phone" bind:value={form.phone}>
+  <input placeholder="Phone" 
+   bind:value={form.phone}>
   <br>
 </form>
 <button on:click={add}>Add</button>
 ```
 
 ---
+# <!--!--> Deploy v3
+```sh
+# deploy v3
+cp src/App3.svelte address/web/src/App.svelte
+nim project deploy address
+```
+
+---
+# <!--!--> Remove
 ```sh
 let select
 function remove() {
-  fetch("/api/addr/del?name="+select).then(all)
+  fetch("/api/addr/del?name="+select)
+  .then(all)
 }
 ```
 
 ---
+# Remove Changes
 ```html
-<th></th>
+ <table>
+    <tr>
++     <th></th
+      <th>Name</th>
+...
+      <tr>
++       <td>
++         <input type="radio" 
++          bind:group={select} 
++          value={row.name} />
++       </td>
+        <td>{row.name}</td>
+...
+  <button on:click={add}>Add</button>
++ <button on:click={remove}>Remove</button>
+```
 
-<td>
-  <input type="radio"
-    bind:group={select}
-    value={row.name}>
-</td>
-
-<button on:click={remove}>Remove</button>
+---
+# <!--!--> Deploy v4
+```sh
+# deploy v4
+cp src/App4.svelte address/web/src/App.svelte
+nim project deploy address
 ```
 
 ---
 # Exercise for Certification
 
-Implement the "edit" button to load the form the selected value allowing to edit it
+Implement the "edit" button.
+
+The goal is to load in the form the selected value, allowing to edit it (change and save).
 
 

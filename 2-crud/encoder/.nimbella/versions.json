@@ -1,12 +1,12 @@
 [
   {
     "apihost": "https://apigcp.nimbella.io",
-    "namespace": "msciabgm-3h6qwxvwpw2",
+    "namespace": "githubsc-x98gwr9ujwl",
     "packageVersions": {},
     "actionVersions": {
       "binary": {
-        "version": "0.0.7",
-        "digest": "151e4d36baa5b1431a912ff1c83662e84a4722ddc7ac5b6b61f2010494eea63f"
+        "version": "0.0.3",
+        "digest": "df757620a54a174d6f84e774d11019e680932e0599e0b8fb3e2425ee90806a1d"
       }
     },
     "webHashes": {}
