@@ -18,8 +18,5 @@ function main(args) {
                 "body": url[0]
             }
         })
-    }).catch(err => {
-        console.log(err)
-        return { "body": "" }
     })
 }

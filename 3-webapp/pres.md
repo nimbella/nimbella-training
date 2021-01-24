@@ -11,32 +11,19 @@ backgroundImage: url('https://marp.app/assets/hero-background.jpg')
 
 # **Lesson 3**
 
-Advanced Web Applications
+Web Applications in depth
 
 https://www.nimbella.com
 
 ---
 # Plan
-
-- Demo: a photo album
 - Web Actions
-- Libraries
-- Buckets
-
----
-# Step by step
-
-1. Display an image
-
-2. Display the thumbnail of an image
-
-1. An action to upload a file
-
-2. Front-End to do File Upload
-
-3. Generating Thumbnails
-
-4. Rendering Thumbnails
+  - `true`, `false` and `raw`
+  - handling headers and content
+- Multi file actions
+  - including resources and libraries
+- File Upload
+  - using buckets
 
 ---
 # Different kind of actions
@@ -53,20 +40,30 @@ https://www.nimbella.com
 ---
 # Actions with `--web=false`
 - no url for web access without authentication
-- input and output in json
+- input and output in JSON
 - can be used:
   - in sequences
   - with triggers
   - invoked with API
-    - requires API KEY, `POST` and `Content-Type: application/json`
 
+
+---
+# API Invocation
+
+- Path, relative to the `<apihost>`:
+`/api/v1/namespaces/<namespaces>/actions/[<package>/]<action>`
+- Method: `POST`, with JSON data 
+- Header: `Content-Type: application/json`
+- Query: `?blocking=[true|false]`
+ - API KEY for authentication. Example:
 ```
 23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP
 ```
-
+ 
 ---
 # `hello.js`:
 ```
+// hello.js
 function main(args) {
     let name = args.name || "World"
     console.log(args)
@@ -82,11 +79,13 @@ function main(args) {
 # Exploring `--web=false`
 nim action update hello src/hello.js --web=false
 nim action get hello --url
+# unauthorized access
 URL=$(nim action get hello --url)
 curl $URL
-AUTH=$(nim auth current --auth)
 # invoking action 
-curl -X POST -u $AUTH "$URL?blocking=true"
+AUTH=$(nim auth current --auth)
+# not shown
+curl -X POST -u $AUTH "$URL?blocking=true" | jq .
 # API invocation showing result
 curl -X POST -u $AUTH "$URL?blocking=true" | jq .response.result
 # complete invocation with args!!!
@@ -100,7 +99,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"name": "Mike"}' -u $AUTH 
   - parse url with GET 
   - parse inputs in args
 - Output:
-  - requires `body`
+  - mandatory: `body` for the output
   - optional `headers`
   - optional `statusCode`
 
@@ -156,6 +155,7 @@ function main(args) {
 nim action update helloimg src/helloimg.js --web=true
 nim action get helloimg --url
 # open in the browser
+
 ```
 
 ---
@@ -181,6 +181,7 @@ nim action get helloimg --url
 # <!--!--> Inspecting with `echo.js`
 ```sh
 ECHO='function main(args) { return { "body": args } }'
+echo $ECHO
 nim action update echo <(echo $ECHO) --kind nodejs:default --web=true
 URL=$(nim action get echo --url)
 curl $URL
@@ -195,7 +196,6 @@ curl -H "$JSON" -X PUT -d '{"a":1,"b":2}' $URL/extra/path
 ```
 
 ---
-
 # Using `--web=raw`
 
 If you want to parse your content, use `--web=raw`
@@ -225,7 +225,7 @@ curl -H "$JSON" -X PUT -d '{"a":1,"b":2}' $URL/extra/path
 
 - create a directory instead of a single file
   under `<project>/packages/<package>/<actiondir>`
-- use a `index.js` to identify main in javascript
+- use a `index.js` to identify the main in javascript
   - do not mix with other languages...
 - use `.include` to select included subdirectories
 - **or** use `.ignore` to exclude subdirectories
@@ -267,6 +267,18 @@ function main(args) {
 exports.main = main 
 ```
 
+
+---
+# `exports.main = main` ???
+
+- Standard in CommonJS modules (used in  NodeJS)
+  - required for `require`
+- Multifile actions does require it
+- Single file actions does not...
+  - But better include it. **Always.**
+  - useful with unit tests, for examples
+
+
 ---
 # Test multifile action 
 ```sh
@@ -275,14 +287,13 @@ mkdir -p sample/packages/default/hellodir
 cp src/hellodir.js sample/packages/default/hellodir/index.js
 cp src/hello2.png sample/packages/default/hellodir/hello.png
 nim project deploy sample
-nim action get  hellodir --url
+nim action get hellodir --url
 # open browser
 ```
 
 ---
 
-# Example:
-## Resizing
+# Resizing
 ![bg fit](img/hellolib.png)
 
 ---
@@ -301,8 +312,9 @@ sharp(body)
 - `data` is a buffer with resized image
 
 ---
-## <!--!--> Resizing an image
+### <!--!--> Resizing an image
 ```js
+// resizing an image
 const fs = require("fs")
 const path = require('path')
 const sharp = require("sharp")
@@ -321,9 +333,9 @@ exports.main = main
 ```
 
 ---
-# Using `node_modules` libraries in actions
+# Using `node_modules` libraries in actions <!--fit-->
 
-- create in a folder a package.json
+- create in a folder a `package.json`:
 `npm init -y`
 - install a library, saving the requirement
 `npm install --save sharp`
@@ -353,8 +365,8 @@ nim action get  hellolib --url
 
 - using `multipart/form-data`: 
   - hits easily the 10mb limit
-  - you have to parse the upload
-  - not recommended
+  - you have to parse the payload by yourself
+  - **not** recommended
 
 - Modern practices:
   - use signed urls
@@ -362,18 +374,61 @@ nim action get  hellolib --url
   - use File API
   
 ---
-.include upload.js
-
----
- # <!--!--> Testing Upload
-```sh
-nim action update upload src/upload.js
-nim action invoke upload
-nim activation logs
-URL=$(curn)
+- From `nimbella` get `bucket` then `file`
+```js
+const nimbella = require('@nimbella/sdk')
+let bucket = await nimbella.storage()
+let file = await bucket.file(filename)
+```
+- generate a *signed url* to upload
+```js
+let url = await file.getSignedUrl({
+    version: 'v4',
+    action: 'write', // also 'read' and more...
+    expires: Date.now() + time_to_live
+})
 ```
 
 ---
+```js
+// upload.js
+const nimbella = require('@nimbella/sdk')
+
+function main(args) {
+    let filename = args.filename || "upload.png"
+    let ttl = parseInt(args.ttl) || 15 * 60 * 1000
+    let mime = args.mime | 'image/png'
+
+    return nimbella.storage().then(bucket => {
+        const file = bucket.file(filename)
+        return file.getSignedUrl({
+            version: 'v4',
+            action: 'write',
+            expires: Date.now() + ttl,
+            contentType: mime,
+            responseType: mime
+        }).then(url => {
+            return {
+                "body": url[0]
+            }
+        })
+    })
+}
+```
+
+---
+# `nim object`
+- `nim object list`: 
+list objects
+- `nim object [create|update] <file> [-d <path>]`:
+add or update a local `<file>` in `<path>`
+- `nim object get <path> -s  .`: 
+download and save `<path>` in current dir
+- `nim object delete <path>`: 
+delete `<path>`
+
+---
+ # <!--!--> Testing Upload
 ```sh
 cp src/upload.js sample/packages/default/upload.js
 nim project deploy sample --incremental
@@ -382,10 +437,16 @@ PUT=$(curl $URL)
 echo $PUT
 nim object delete upload.png
 nim object list
-curl  -v -X PUT  -H 'Content-Type: image/png' --data-binary @src/sample1.png $PUT
+curl  -X PUT  -H 'Content-Type: image/png' --data-binary @src/sample1.png $PUT
 nim object list
 nim object get -s upload.png .
 ```
+
+
+---
+# Download
+- Generate signed url
+
 
 ---
 ```sh
