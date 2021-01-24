@@ -1,1 +1,6 @@
 tmp/
+node_modules/
+*.zip
+.nimbella/
+.DS_Store
+.vscode/
