@@ -11,7 +11,7 @@ backgroundImage: url('https://marp.app/assets/hero-background.jpg')
 
 # **Lesson 3**
 
-Web Applications in depth
+Web Actions
 
 https://www.nimbella.com
 
@@ -29,22 +29,22 @@ https://www.nimbella.com
 # Different kind of actions
 
 - `--web=false`
-  no web access at all
+no web access at all
 
 - `-web=true`
-  web access, cooked
+web access, cooked (parsed)
 
 - `--web=raw`
-  access, raw
+web access, raw (unparsed)
 
 ---
 # Actions with `--web=false`
 - no url for web access without authentication
 - input and output in JSON
-- can be used:
+- private actions can be used:
   - in sequences
   - with triggers
-  - invoked with API
+  - using the API KEY
 
 
 ---
@@ -56,13 +56,13 @@ https://www.nimbella.com
 - Header: `Content-Type: application/json`
 - Query: `?blocking=[true|false]`
  - API KEY for authentication. Example:
-```
+```sh
 23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP
 ```
  
 ---
 # `hello.js`:
-```
+```js
 // hello.js
 function main(args) {
     let name = args.name || "World"
@@ -104,7 +104,19 @@ curl -X POST -H "Content-Type: application/json" -d '{"name": "Mike"}' -u $AUTH 
   - optional `statusCode`
 
 ---
+# Web Action Features
+
+- You can use http verbs: 
+`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`
+- You can use extensions to set the content type:
+`.json`, `.html`, `.svg`, `.text` or `.http` (default) 
+
+- Forms with content type `application/x-www-form-urlencoded` are decoded
+  - but **NOT** `multipart/form-data`
+
+---
 # <!--!--> `helloweb.js`:
+
 ![bg right 110%](img/helloweb.png)
 ```js
 function main(args) {
@@ -126,16 +138,18 @@ URL=$(nim action get helloweb --url)
 curl $URL
 # GET url-encoded parameters
 curl "$URL?name=Mike"
-# POST JSON parameters
-curl -X POST -d '{"name": "Mike"}' -H 'Content-type: application/json' $URL
+# POST url-encoded parameters
+curl -X POST -d "name=Mike" -H "Content-Type: application/x-www-form-urlencoded"  "$URL"
+# PUT with JSON parameters
+curl -X PUT -d '{"name": "Mike"}' -H 'Content-type: application/json' $URL
 ```
 
 ---
 # <!--!--> <!-- fit --> image content-type
-![bg right 110%](img/helloimg.png)
 
+![bg right 110%](img/helloimg.png)
 ```js
-const img = "<base64 ecoded image>"
+const img = "<base64 encoded image>"
 
 function main(args) {
     return {
@@ -159,23 +173,12 @@ nim action get helloimg --url
 ```
 
 ---
-# Additional features
-
-- You can use http verbs: 
-`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`
-- You can use extensions to set the content type:
-`.json`, `.html`, `.svg`, `.text` or `.http` (default) 
-
-- Forms with content type `application/x-www-form-urlencoded` are decoded
-  - but **NOT** `multipart/form-data`
-
----
-# Additional web informations 
+# Additional web informations
 
 - `__ow_method` (**string**): the HTTP method of the request.
 - `__ow_headers` (**map string to string**): the request headers.
 - `__ow_path` (**string**): the unmatched path of the request (matching stops after consuming the action extension).
-- `__ow_user` (**string**): the namespace
+- `__ow_user` (**string**): the namespace.
 
 ---
 # <!--!--> Inspecting with `echo.js`
@@ -199,6 +202,7 @@ curl -H "$JSON" -X PUT -d '{"a":1,"b":2}' $URL/extra/path
 # Using `--web=raw`
 
 If you want to parse your content, use `--web=raw`
+
 You get:
 
 - `__ow_body` (**string**): the request body entity, as a base64 encoded string when content is binary or JSON object/array, or plain string otherwise.
@@ -266,7 +270,6 @@ function main(args) {
 }
 exports.main = main 
 ```
-
 
 ---
 # `exports.main = main` ???
@@ -363,22 +366,22 @@ nim action get  hellolib --url
 ---
 # File Upload
 
-- using `multipart/form-data`: 
+- **Not** recommended: 
+  - using `multipart/form-data`: 
   - hits easily the 10mb limit
   - you have to parse the payload by yourself
-  - **not** recommended
-
-- Modern practices:
-  - use signed urls
-  - write to a bucket
+  
+- Recommended:
   - use File API
+  - write to a bucket
+  - use signed urls
   
 ---
 - From `nimbella` get `bucket` then `file`
 ```js
 const nimbella = require('@nimbella/sdk')
 let bucket = await nimbella.storage()
-let file = await bucket.file(filename)
+let file = bucket.file(filename)
 ```
 - generate a *signed url* to upload
 ```js
@@ -433,8 +436,8 @@ delete `<path>`
 cp src/upload.js sample/packages/default/upload.js
 nim project deploy sample --incremental
 URL=$(nim action get upload --url)
+curl $URL
 PUT=$(curl $URL)
-echo $PUT
 nim object delete upload.png
 nim object list
 curl  -X PUT  -H 'Content-Type: image/png' --data-binary @src/sample1.png $PUT
@@ -442,29 +445,154 @@ nim object list
 nim object get -s upload.png .
 ```
 
-
 ---
-# Download
-- Generate signed url
-
-
----
-```sh
-cp src/download.js sample/packages/default/download.js
-mkdir -p sample/web
-cp src/favicon.ico sample/web/favicon.ico
-cp src/index1.html sample/web/index1.html
-nim project deploy sample --incremental
-URL=$(nim action get download --url)
-curl -v $URL 2>&1 | grep location
-echo $URL
-nim activation logs
-nim activation list --limit 3
+# `download`: an action to render an image <!--fit-->
+- Generate a `read` signed URL:
+```js
+let urls = await file.getSignedUrl({ 
+  version: 'v4',
+  action: 'read',                    
+  expires: Date.now() + 60 * 1000 })
+```
+- Return a redirect with `307` (tempory redirect)
+```js
+ return {
+   "statusCode": 307,
+   "headers": { "Location": url[0] } }
 ```
 
 ---
+```js
+// download.js
+const nimbella = require('@nimbella/sdk')
+const notFound = "https://via.placeholder.com/200x50.png/FF0000/FFFFFF?text=Image+not+found"
+
+function main(args) {
+    let filename = args.filename || "upload.png"
+    let mime = args.mime || "image.png"
+    return nimbella.storage().then(bucket => {
+            const file = bucket.file(filename)
+            return file.exists().then(found => {
+                    if (found[0])
+                        return file.getSignedUrl({
+                            version: 'v4',
+                            action: 'read',
+                            responseType: mime,
+                            expires: Date.now() + 60 * 1000
+                        })
+                    return [notFound]
+                })
+        }).then(url => {
+            console.log(url)
+            return {
+                "statusCode": 307,
+                "headers": {
+                    "Location": url[0]
+                }
+            }
+        })
+}
+```
+
+---
+# <!--!--> Test download
+```sh
+# test download
+cat src/index1.html 
+# <img src="/api/default/download">
+cp src/download.js sample/packages/default/download.js
+mkdir -p sample/web
+cp src/favicon.ico sample/web/favicon.ico
+cp src/index1.html sample/web/index.html
+nim project deploy sample --incremental
+URL=$(nim action get download --url)
+curl -v $URL 2>&1 | grep location
+# open browser
+URL=$(nim action get upload --url)
+PUT=$(curl $URL)
+curl  -X PUT  -H 'Content-Type: image/png' --data-binary @src/sample2.png $PUT
+
+```
+
+---
+## Upload UI
+![bg right:35% fit](img/upload.png)
+```html
+<html><head>
+    <link rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"/>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+</head><body>
+    <div class="container">
+      <div class="jumbotron">
+        <img src="/api/default/download" />
+      </div>
+      <div class="form-group">
+        <input type="file" id="file" />
+      </div>
+      <div class="form-group">
+        <button disabled="true" id="upload">Upload</button>
+      </div>
+    </div>
+    <script src="index.js"></script>
+</body></html>
+```
+
+---
+# File Upload
+- Get filename from `<input type="file" id="file">`
+```js
+let reader = new FileReader()
+reader.readAsArrayBuffer($("#file")[0].files[0])
+```
+- `GET` signed url then `PUT` file in it
+```js
+fetch("/api/default/upload")
+  .then(r => r.text())
+  .then(url => fetch(url, { method: "put",
+                            body: reader.result }))
+```
+
+---
+```js
+// index.js for file upload
+let reader = new FileReader()
+
+function select() {
+    reader.readAsArrayBuffer($("#file")[0].files[0])
+    $("#upload").attr("disabled", false)
+}
+
+function upload() {
+    fetch("/api/default/upload")
+    .then(r => r.text())
+    .then(url => fetch(url, {
+            method: "put",
+            body: reader.result
+        })).then(r => {
+            if (r.ok) { location.reload() 
+        }).catch(ex => {
+            console.log(ex)
+            alert("Upload error")
+        })
+}
+
+$(document).ready(function () {
+    $("#file").change(select)
+    $("#upload").click(upload)
+})
+```
+
+---
+# <!--!--> Test File Upload
+```sh
+# file upload front-end
 cp src/index2.html sample/web/index.html
 cp src/index.js sample/web/index.js
-nim project deploy sample
+nim project deploy sample --incremental
+```
 
+---
+# Certification Exercise
 
+Modify the upload example to be able also to resize the uploaded image. 

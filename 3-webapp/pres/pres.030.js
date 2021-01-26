@@ -1,3 +1,4 @@
+// upload.js
 const nimbella = require('@nimbella/sdk')
 
 function main(args) {

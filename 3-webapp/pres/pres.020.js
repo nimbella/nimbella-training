@@ -10,7 +10,5 @@ function main(args) {
             "Content-Type": "image/png"
         }
     }
-
 }
-
 exports.main = main 
