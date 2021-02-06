@@ -281,9 +281,8 @@ exports.main = main
   - But better include it. **Always.**
   - useful with unit tests, for examples
 
-
 ---
-# Test multifile action 
+# <!--!--> Test multifile action 
 ```sh
 # Test including a library 
 mkdir -p sample/packages/default/hellodir
@@ -377,6 +376,8 @@ nim action get  hellolib --url
   - use signed urls
   
 ---
+# File Upload
+
 - From `nimbella` get `bucket` then `file`
 ```js
 const nimbella = require('@nimbella/sdk')
@@ -433,6 +434,7 @@ delete `<path>`
 ---
  # <!--!--> Testing Upload
 ```sh
+# testing upload
 cp src/upload.js sample/packages/default/upload.js
 nim project deploy sample --incremental
 URL=$(nim action get upload --url)

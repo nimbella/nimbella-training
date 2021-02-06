@@ -1,3 +1,4 @@
+# testing upload
 cp src/upload.js sample/packages/default/upload.js
 nim project deploy sample --incremental
 URL=$(nim action get upload --url)
