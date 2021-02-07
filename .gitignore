@@ -4,3 +4,4 @@ node_modules/
 .nimbella/
 .DS_Store
 .vscode/
+attic/

@@ -7,7 +7,7 @@ backgroundColor: #fff
 backgroundImage: url('https://marp.app/assets/hero-background.jpg')
 ---
 
-![bg left:40% 80%](../nimbella.png)
+![bg left:40% 80%](img/nimbella.png)
 
 # **Lesson 4**
 
@@ -61,20 +61,24 @@ rd.ready
 
 ---
 # Redis Data Types
-- Strings 
-- Lists
-- Hashes
-- Sets 
+- Keys: `set`, `get`, `del`, `keys`,...
+  - default: String
+- List: `rpush`, `lpush`, `lpop`, `linsert`, `llen`, `lrange`... 
+- Hashes: `hget`, `hset`, `hdel`, `hgetall`,...
+- Set: `sadd`, `smembers`, `sismember`,...
 - Others (specialized)
 
 ---
 # <!--!--> Redis key get/set/del
 ```js
+// Redis  get/set/del/keys
 await rd.getAsync("k")
 # null
 rd.set("k","v")
 await rd.getAsync("k")
 # v
+await rd.keysAsync()
+# ['k']
 rd.del("k")
 await rd.getAsync("k")
 # null
@@ -83,6 +87,7 @@ await rd.getAsync("k")
 ---
 # <!--!--> Redis Lists
 ```js
+// Redis lists
 rd.lpush("l", 1)
 await rd.llenAsync("l")
 # 1
@@ -100,6 +105,7 @@ rd.lrangeAsync("l", 0,-1).then(console.log)
 ---
 # <!--!--> Redis Hashes
 ```js
+// Redis hashes
 rd.hset("h", "a", 1)
 await rd.hgetAsync("h", "a")
 # '1'
@@ -118,6 +124,7 @@ await rd.hgetallAsync("h")
 ---
 # Sets
 ```js
+// Redis sets
 rd.sadd("s", "1")
 rd.sadd("s", "3")
 await rd.smembersAsync("s")
@@ -135,6 +142,7 @@ await rd.sismemberAsync("s", "4")
 ---
 # <!--!--> Importing some values
 ```sh
+## Importing some values
 # url to faas wars robot list
 URL=https://apigcp.nimbella.io/api/v1/web/nimbots/rumble/public 
 # getting the list
@@ -162,6 +170,17 @@ return rd.scanAsync(cursor,
   - `cursor` is current page
   - `match` is a "pattern"
   - `count` is the page size
+
+
+
+---
+# Patterns: scan, keys, hscan,...
+- `h?llo` matches hello, hallo and hxllo
+- `h*llo` matches hllo and heeeello
+- `h[ae]llo` matches hello and hallo, but not hillo
+- `h[^e]llo` matches hallo, hbllo, ... but not hello
+- `h[a-b]llo` matches hallo and hbllo
+
 
 ---
 # <!--!--> scan.js
@@ -280,21 +299,25 @@ test("name", () => {
 ```
 
 ---
-# <!--!--> Running Test
+![bg fit ](img/hello-test.png)
+
+---
+# <!--!--> Running Tests with jest
 ```sh
+# running tests with jest
 mkdir -p packages/hello
 cp ../src/.ignore packages/support/.ignore
 cp ../src/hello.js packages/hello/index.js
 cp ../src/hello.test.js packages/hello/index.test.js
 jest
+# deploy and test "live"
+nim project deploy .
+nim action invoke hello
+nim action invoke hello -p name Mike
 ```
 
 ---
-![bg fit ](img/hello-test.png)
-
----
 # Testing with a promise
-
 ```js
 const get = require("./get.js").main
 ```
@@ -323,8 +346,8 @@ exports.main = function (args) {
 
 ## similarly set.js and get.js (not shown)
 
-
 ---
+# <!--!--> Testing with Jest get
 ```sh
 # simple get test
 mkdir -p packages/support
@@ -381,7 +404,7 @@ test("get", () =>
 ---
 # <!--!--> Fixture fixes all tests
 ```sh
-# Fixed get with fixture
+# Fixture fixes all tests
 cp ../src/del.js packages/support/del.js
 cp ../src/get.test2.js packages/get.test.js
 # checking
@@ -393,13 +416,14 @@ jest
 ---
 # <!--!--> Deployment and Test Online
 ```sh
-# can be automated too
+## Deployment and Test Online
 nim project deploy .
 nim action invoke support/get -p key hello
 nim action invoke support/set -p key hello -p value world
 nim action invoke support/get -p key hello
 nim action invoke support/del -p key hello
 nim action invoke support/get -p key hello
+# can be automated too
 ```
 
 ---
@@ -417,7 +441,7 @@ test("get", () =>
     - tests will check it keeps working
 
 ---
-# <!--!--> sample test with snapshot
+# <!--!--> Sample test with snapshot
 ```js
 const set = require("./support/set.js").main
 const get = require("./support/get.js").main
@@ -453,3 +477,9 @@ jest
 cp ../src/set.js packages/set.js
 jest
 ```
+
+# Certification Exercise
+
+Exercise 2 was "adding edit" to the simple CRUD example.
+
+You have to add unit tests to the backed actions.
