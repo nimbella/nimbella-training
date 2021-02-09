@@ -491,8 +491,9 @@ cp ../src/set.js packages/support/set.js
 jest
 ```
 
+---
 # Certification Exercise
 
 Exercise 2 was "adding edit" to the simple CRUD example.
 
-You have to add unit tests to the backed actions.
+You have to add unit tests to the backend actions.
