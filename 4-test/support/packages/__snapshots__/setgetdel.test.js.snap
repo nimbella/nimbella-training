@@ -1,0 +1,31 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`del 1`] = `
+Object {
+  "result": 1,
+}
+`;
+
+exports[`get 1`] = `
+Object {
+  "result": null,
+}
+`;
+
+exports[`get2 1`] = `
+Object {
+  "result": "world",
+}
+`;
+
+exports[`get3 1`] = `
+Object {
+  "result": null,
+}
+`;
+
+exports[`set 1`] = `
+Object {
+  "result": "OK",
+}
+`;

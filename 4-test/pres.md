@@ -77,7 +77,7 @@ await rd.getAsync("k")
 rd.set("k","v")
 await rd.getAsync("k")
 # v
-await rd.keysAsync()
+await rd.keysAsync("*")
 # ['k']
 rd.del("k")
 await rd.getAsync("k")
@@ -98,8 +98,8 @@ rd.linsert("l",  "AFTER", 1, 3)
 await rd.lrangeAsync("l", 0,-1)
 # [ '1', '3', '2' ]
 rd.lpop("l")
-rd.lrangeAsync("l", 0,-1).then(console.log)
-# [ '1', '3' ]
+await rd.lrangeAsync("l", 0,-1)
+# [ '3', '2' ]
 ```
 
 ---
@@ -116,13 +116,14 @@ await rd.hgetallAsync("h")
 # { a: '1', b: '2' }
 rd.hdel('h', 'b')
 await rd.hgetallAsync("h")
+# { a: '1' }
 rd.del('h')
 await rd.hgetallAsync("h")
 # null
 ```
 
 ---
-# Sets
+# <!--!--> Sets
 ```js
 // Redis sets
 rd.sadd("s", "1")
@@ -305,15 +306,15 @@ test("name", () => {
 # <!--!--> Running Tests with jest
 ```sh
 # running tests with jest
-mkdir -p packages/hello
-cp ../src/.ignore packages/support/.ignore
-cp ../src/hello.js packages/hello/index.js
-cp ../src/hello.test.js packages/hello/index.test.js
+mkdir -p packages/support/hello
+cp ../src/.ignore packages/support/hello/.ignore
+cp ../src/hello.js packages/support/hello/index.js
+cp ../src/hello.test.js packages/support/hello/index.test.js
 jest
 # deploy and test "live"
 nim project deploy .
-nim action invoke hello
-nim action invoke hello -p name Mike
+nim action invoke support/hello
+nim action invoke support/hello -p name Mike
 ```
 
 ---
@@ -321,11 +322,11 @@ nim action invoke hello -p name Mike
 ```js
 const get = require("./get.js").main
 ```
-- Wrong!
+- Wrong! Do not `expect`for a promise
 ```js
 expect( get({"key":"hello"}) ).toEqual({"result": null})
 ```
-- Correct...
+- Correct: return a promoise from a test
   - jest will wait for promises to resolve
 
 ```js
@@ -347,6 +348,17 @@ exports.main = function (args) {
 ## similarly set.js and get.js (not shown)
 
 ---
+# <!--!--> `get.test.js` 
+```js
+// get.test.js
+const get = require("./support/get.js").main
+
+test("get", () => 
+    get({"key":"hello"}).then(x => expect(x).toEqual({"result": null})
+))
+```
+ 
+---
 # <!--!--> Testing with Jest get
 ```sh
 # simple get test
@@ -360,6 +372,7 @@ jest /get
 ---
 # <!--!--> Chained tests
 ```js
+// chained tests
 const get = require("./get.js").main
 const set = require("./set.js").main
 
@@ -471,10 +484,10 @@ cat packages/__snapshots__/setgetdel.test.js.snap
 # run it again
 jest
 # change something
-cp ../src/get.js packages/set.js
+cp ../src/get.js packages/support/set.js
 jest
 # fix
-cp ../src/set.js packages/set.js
+cp ../src/set.js packages/support/set.js
 jest
 ```
 
