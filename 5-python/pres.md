@@ -448,7 +448,7 @@ nim activation logs
 
 ---
 ## <!--!--> Building a virtualenv with Pillow
-```
+```sh
 ## Building a virtualenv with PIL
 cd py/resize
 ls
