@@ -69,7 +69,7 @@ mkdir -p py/packages/default
 cp src/hellopy.py py/packages/default/hellopy.py
 
 # Manual test on the repl
-PYTHONPATH=py/packages/default python3
+PYTHONPATH=py/packages/default PYTHONDONTWRITEBYTECODE=1 python3
 from hellopy import *
 
 main({})
@@ -173,7 +173,7 @@ nim activation logs
   - `get.py` read a key
   - `set.py` set a key
   - `rem.py` delete a key
-    - changed name, `del` is a reserved work in python!!!
+    - changed name, `del` is a reserved word in python!!!
   - `all.py`  returns all the key
     - well, first page actually
 
@@ -231,7 +231,7 @@ def main(args):
 ```
 
 ---
-# Local Test with Redis
+# <!--!--> Local Test with Redis
 ```sh
 source init.src
 mkdir py/packages/addr

@@ -4,7 +4,7 @@ mkdir -p py/packages/default
 cp src/hellopy.py py/packages/default/hellopy.py
 
 # Manual test on the repl
-PYTHONPATH=py/packages/default python3
+PYTHONPATH=py/packages/default PYTHONDONTWRITEBYTECODE=1 python3
 from hellopy import *
 
 main({})
