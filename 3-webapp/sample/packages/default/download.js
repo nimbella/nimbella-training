@@ -3,7 +3,7 @@ const notFound = "https://via.placeholder.com/200x50.png/FF0000/FFFFFF?text=Imag
 
 function main(args) {
     let filename = args.filename || "upload.png"
-    let mime = args.mime || "image.png"
+    let mime = args.mime || "image/png"
     return nimbella.storage()
         .then(bucket => {
             const file = bucket.file(filename)
