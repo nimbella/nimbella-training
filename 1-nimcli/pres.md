@@ -23,7 +23,6 @@ https://www.nimbella.com
 - complete a final online survey
   - link delivered at the course completion
 
-
 ---
 # Plan
 
