@@ -1,28 +1,33 @@
-<script>
-  // retrieve data
-  let data = [];
-  function all() {
-    fetch("/api/addr/all")
-      .then((r) => r.json())
-      .then((d) => (data = d));
-  }
-  // init
-  import { onMount } from "svelte";
-  onMount(all);
+<script lang="ts">
+  import type {Record, Result, Args} from './decl'
 
-  let form = {};
+  let data: Record[] = []
+
+  function all()  {
+      fetch("/api/addr/crud?op=all")
+      .then(r => r.json() as Result)
+      .then(d => data = d.data ? d.data : [])
+  }
+
+  // init
+  import { onMount } from 'svelte'
+  onMount(all)
+
+  let form = <Record>{};
 
   function add() {
+    let args: Args = form
+    args.op = "set"
     fetch("/api/addr/set", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(args),
     }).then(all);
   }
 
-  let select;
+  let select: string;
   function remove() {
-    fetch("/api/addr/del?name=" + select).then(all);
+    fetch("/api/addr/crud?op=del&name=" + select).then(all);
   }
 </script>
 

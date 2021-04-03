@@ -657,16 +657,14 @@ nim project deploy address
 ## <!--!--> Load all data
 ```sh
 <script lang="ts">
-  interface Record {
-    name: string
-    company: string
-    phone: number
-  }
+  import type {Record, Result, Args} from './decl'
+
   let data: Record[] = []
+
   function all()  {
       fetch("/api/addr/crud?op=all")
-      .then(r => r.json())
-      .then(d => data = d)
+      .then(r => r.json() as Result)
+      .then(d => data = d.data ? d.data : [])
   }
   // init
   import { onMount } from 'svelte'
@@ -707,23 +705,24 @@ nim project deploy address
 ---
 # <!--!--> Deploy
 ```sh
-cp src/App2.svelte address/web/src/App.svelte
+cp src/decl.d.ts address/web/src/decl.d.ts
+cp src/App1.svelte address/web/src/App.svelte
 nim project deploy address
 ```
 
 ---
 # <!--!--> Form
-```js
-let form = {}
+```ts
+let form = <Record>{};
+
 function add() {
-    fetch("/api/addr/set", 
-    {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
-    })
-    .then(all)
-    .then(() => { form = {}})
+    let args: Args = form
+    args.op = "set"
+    fetch("/api/addr/set", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(args),
+    }).then(all);
 }
 ```
 
@@ -759,18 +758,17 @@ function add() {
 # <!--!--> Deploy v3
 ```sh
 # deploy v3
-cp src/App3.svelte address/web/src/App.svelte
+cp src/App2.svelte address/web/src/App.svelte
 nim project deploy address
 ```
 
 ---
 # <!--!--> Remove
-```sh
-let select
-function remove() {
-  fetch("/api/addr/del?name="+select)
-  .then(all)
-}
+```ts
+  let select: string;
+  function remove() {
+    fetch("/api/addr/crud?op=del&name=" + select).then(all);
+  }
 ```
 
 ---
@@ -794,10 +792,10 @@ function remove() {
 ```
 
 ---
-# <!--!--> Deploy v4
+# <!--!--> Final
 ```sh
 # deploy v4
-cp src/App4.svelte address/web/src/App.svelte
+cp src/App3.svelte address/web/src/App.svelte
 nim project deploy address
 ```
 
