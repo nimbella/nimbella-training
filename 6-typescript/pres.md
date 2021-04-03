@@ -18,12 +18,26 @@ https://www.nimbella.com
 ---
 # Plan
 
-- sample: a "crud" application
-  - use redis for storage
-  - use svelte for front-end
-- use typescript
-  - share code
+- Introducing Nimbella
+- Sample: a "crud" back-end in javascript
+- Adding types: migrating to typescript
+- A front-end in Svelte/Typescript
   
+---
+# Nimbella vs Kubernetes vs Cloud
+
+![bg fit](img/0a-nimbella.png)
+
+---
+![bg](img/0c-compare.png)
+
+---
+![bg fit](img/0b-architecture.png)
+
+---
+![bg fit](img/1-setup.png)
+
+
 ---
 # A Nimbella project
 - Collection of
@@ -59,16 +73,27 @@ show what you have in the namespace
 - `nim namespace clean`
 cleaning your namespace
 
+
 ---
-# <!--!--> Authentication
-```sh
-# authentication
-nim auth login
-nim auth list
-nim auth current
-nim namespace get
-nim namespace clean
+# Simple Action
+```js
+function main(args) {
+    let name = args.name || "world"
+    console.log(name)
+    return { body: "Hello, "+name }
+}
 ```
+
+---
+# Create and Updating an Action
+
+- `nim action create <name> <file>`
+ - create an action with `<name>` using the `<file>`
+ 
+- `nim action update <name> <file>`
+   - works also if the action does not exists
+   - some people only uses `update`
+
 
 ---
 # Inspecting Actions
@@ -83,10 +108,12 @@ get the public url of an action
 ---
 # <!--!--> Inspecting the action
 ```sh
+# create
+nim action create hello src/hello.js
 # Inspecting the action
 nim action list
-nim action get Jedi
-nim action get Jedi --url 
+nim action get hello
+nim action get hello --url 
 ```
 
 ---
@@ -105,14 +132,12 @@ you need a file in json format
 # <!--!--> Invoking an action with parameters
 ```sh
 # Invoking an action with parameters
-nim action invoke Jedi -p event idle
-nim action invoke Jedi -p event hit
-nim action invoke Jedi -p event enemy-spot
-nim action invoke Jedi -p event wall-collide
+nim action invoke hello 
+nim action invoke hello -p name Mike
 
 # invoking an action with json
-echo '{ "event": "idle"}' >args.json
-nim action invoke Jedi -P args.json
+echo '{ "name": "Nimble"}' >args.json
+nim action invoke hello -P args.json
 ```
 
 ---
@@ -123,6 +148,7 @@ nim action invoke Jedi -P args.json
 - `--web true`  
   - web public it is the default with `nim`
   - **not** all the actions are web public
+  - *must* return a `body`
 
 ## use url-encoded parameters
 
@@ -134,39 +160,16 @@ nim action invoke Jedi -P args.json
 ```sh
 # Using Curl  for web actions
 
-URL=$(nim action get Jedi --url)
+URL=$(nim action get hello --url)
 echo $URL
 
 # use GET and url parameters
 
-curl "$URL?event=hit"
+curl "$URL?name=Mihe"
 
 ## use POST and form data (url-encoded)
 
-curl -X POST -d event=enemy-spot "$URL"
-```
-
----
-# Updating an Action
-
-- `nim action update <name> <file>`
-   - works also if the action does not exists
-   - some people only uses `update`
-
----
-# <!--!--> Simple Action
-```js
-function main(args) {
-    console.log(args.event)
-    return { body: [
-        {"turn_turret_left": 15, 
-         "shoot": true}
-    ]}
-}
-/*
-nim action update Jedi jedi.js
-nim action invoke Jedi
-*/
+curl -X POST -d name=Mike "$URL"
 ```
 
 ---
@@ -218,7 +221,7 @@ nim kv list
 ---
 # <!--!--> Set in Redis
 ```js
-// set2.js
+// set.js
 function main(args) {
     let db = require("@nimbella/sdk").redis()
     let key = "address:"+args.name
