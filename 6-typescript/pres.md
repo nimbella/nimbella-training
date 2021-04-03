@@ -109,6 +109,7 @@ get the public url of an action
 # <!--!--> Inspecting the action
 ```sh
 # create
+nim action list
 nim action create hello src/hello.js
 # Inspecting the action
 nim action list
@@ -146,7 +147,6 @@ nim action invoke hello -P args.json
 ## only for web actions!
 
 - `--web true`  
-  - web public it is the default with `nim`
   - **not** all the actions are web public
   - *must* return a `body`
 
@@ -158,17 +158,18 @@ nim action invoke hello -P args.json
 ---
 # <!--!--> Using `curl` for web actions
 ```sh
-# Using Curl  for web actions
+# updating as a web action
+nim action update hello src/hello.js --web=true
 
+# Using Curl  for web actions
 URL=$(nim action get hello --url)
 echo $URL
 
 # use GET and url parameters
 
-curl "$URL?name=Mihe"
+curl "$URL?name=Mike"
 
 ## use POST and form data (url-encoded)
-
 curl -X POST -d name=Mike "$URL"
 ```
 
@@ -187,11 +188,12 @@ show logs of an activation
 ---
 # <!--!--> Activations
 ```sh
-# Activations
-nim activation list
-nim action invoke Jedi -p event idle
+# Listing Activations
+nim activation list --limit 3
+nim action invoke hello -p name Mike
 nim activation list --limit 3
 
+# Displaying logs and results
 nim activation logs
 nim activation result
 ```
@@ -212,6 +214,9 @@ nim activation result
 ```sh
 # nim kv support
 nim kv
+nim kv list
+nim kv get hello
+nim kv set hello world
 nim kv list
 nim kv get hello
 nim kv clean
@@ -275,9 +280,9 @@ nim project deploy address
 ```
 
 ---
-# <!--!--> Test record actions
+# <!--!--> Test set/get/del
 ```sh
-# Test the actions
+# Test the actions set/get/del
 nim action invoke addr/set -p name Michele -p company Nimbella -p phone 392 
 nim action invoke addr/get -p name Michele
 nim action invoke addr/del -p name Michele
@@ -291,16 +296,12 @@ nim action invoke addr/get -p name Michele
 function main() {
     let db = require("@nimbella/sdk").redis()
     return db.keysAsync("address:*")
-    .then(reply => {
-        return reply.length == 0 ? []
-          : db.mgetAsync(reply)
-        })
-    .then(reply => {
-        return { 
+    .then(reply =>  
+      reply.length == 0 ? [] : db.mgetAsync(reply))
+    .then(reply => ({ 
         "body": reply.map(JSON.parse) 
-       }
-    })
-    .catch(err => { return { "body": err}})
+      }))
+    .catch(err => ({ "body": err}))
 }
 ```
 
@@ -331,37 +332,51 @@ curl $(nim action get addr/all --url)
 ```
 
 ---
+# Using Typescript
+
+- Different solutions:
+  - integrated typescript compiler
+  - deno runtime
+  - **precompilation**
+
+- Next Steps:
+  - adding types to our code
+  - compile typed code in untyped one
+  - integrate compilation in the deployment
+
+---
 # <!--!--> hello.ts
 ```ts
+// hello.ts
 export function main(args: {name:string}): {body:string} {
-    let name: string = args.name || 'stranger'
-    let greeting = 'Hi ' + name + '!'
+    let name: string = args.name || 'world'
+    let greeting = 'Hello ' + name + '!'
     console.log(greeting)
     return { body: greeting }
-  }
+}
 ```
 
 ---
 # Typescript: Folders and Files
 
 - `address`: project  folder
-- `packages`: backend folder
-- `addr`: package folder
-- `hello`: action folder
-- `src`: sources folder
-  - `index.ts`: the typescript action
-  - `packages.json`: configuration file
-  - `tsconfig.ts`: compiler file
-  - `.include`: list of included files
+  - `packages`: backend folder
+    - `addr`: package folder
+      - `hello`: action folder
+        - `src`: sources folder
+           - `index.ts`: the typescript action
+           - `packages.json`: configuration file
+           - `tsconfig.ts`: compiler file
+           - `.include`: list of included files
 
 ---
 # Create a typescript
 ```sh
 # prepare environment
-mkdir -p address/packages/addr/hello/src
-cp src/hello.ts address/packages/addr/hello/src/index.ts
+mkdir -p address/packages/addr/hellots/src
+cp src/hello.ts address/packages/addr/hellots/src/index.ts
 # initializing 
-cd address/packages/addr/hello
+cd address/packages/addr/hellots
 echo "index.js" >.include
 npm -y init
 tsc --init
@@ -371,12 +386,12 @@ tsc --outDir .
 ls -la
 cd ../../../..
 nim project deploy address
-nim action invoke addr/hello
+nim action invoke addr/hellots
 ```
 
 ---
 # Integrating with `nim`
-- `nim` invokes automatically builds 
+- `nim` invokes automatically the build 
   - `npm run build` if exists `package.json`
 - We need:
   - to add `tsc` in `package.json`
@@ -417,12 +432,12 @@ nim action invoke addr/hello
 # <!--!--> Testing the integration
 ```sh
 # copying configuration and files
-cp src/hi.ts address/packages/addr/hello/src/index.ts
-cp src/package.json address/packages/addr/hello/package.json
-cp src/tsconfig.json address/packages/addr/hello/tsconfig.json
+cp src/hi.ts address/packages/addr/hellots/src/index.ts
+cp src/package.json address/packages/addr/hellots/package.json
+cp src/tsconfig.json address/packages/addr/hellots/tsconfig.json
 # test and deploy
 nim project deploy address
-nim action invoke addr/hello
+nim action invoke addr/hellots
 # expect `hi`
 ```
 
@@ -433,34 +448,41 @@ nim action invoke addr/hello
    - declare types for input and output
    - declare types for used libraries
 
-
-
-
 ---
-# `index1.ts.ts`:
-
-
----
-# <!--!--> Test crud entry point
-```sh
-# prepare crud typescript
-mkdir -p address/packages/addr/crud/src
-cp src/package.json  address/packages/addr/crud/package.json
-cp src/tsconfig.json address/packages/addr/crud/tsconfig.json
-cp src/index1.ts     address/packages/addr/crud/src/index.ts
-echo "index.js"    > address/packages/addr/crud/.include
-
-# test and deploy
-ls -la address/packages/addr/crud
-nim project deploy address
-# note the index.js has been generated
-ls -la address/packages/addr/crud
-nim action invoke addr/crud -p op hello
-nim action invoke addr/crud -p op get -p name Mike -p company Nimbella -p phone 392
+### `decls.d.ts`
+```ts
+export interface Record {
+    name: string
+    company: string
+    phone: number
+}
+export interface Args extends Record {
+    op?: string
+}
+export interface Result {
+    data?: Record[]
+    record?: Record
+    status?: string
+    error?: string
+}
 ```
 
 ---
-## Declare module
+# Using Types
+```ts
+/// <reference path="index.d.ts" />
+import { redis } from "@nimbella/sdk"
+
+import type {Args, Result, Record} from './decl'
+
+function main(args: Args): Promise<{body: Result}>
+```
+- define `Args`, `Result` and `Record`
+- type declarations for `@nimbella/sdk`
+
+
+---
+## Declare module for `@nimbella.sdk`
 ```ts
 // index.d.ts
 declare module "@nimbella/sdk" {
@@ -474,53 +496,109 @@ declare module "@nimbella/sdk" {
     }
 }
 ```
-## Use module
+
+---
+# `index.ts` structure
 ```ts
 /// <reference path="index.d.ts" />
 import { redis } from "@nimbella/sdk"
+import type {Args,Result,Record} from './decls'
+```
+```ts
+export function main(args: Args): Promise<{body:Result}> {
+    let db = redis()
+    let key = "address:"+args.name
+    switch (args.op) {
+        // insert here
+        // get/set/del/all
+        default:
+            return Promise.resolve({ body: { error: "unknown op" } })
+    }
+}
 ```
 
 ---
-# `index2.ts`
+# `set`
+```ts
+case "set":
+    delete args.op
+    // save record
+    return db.setAsync(key, 
+           JSON.stringify(args))
+        .then(reply => 
+           ({ body: { status: reply.toString() } }))
+        .catch(err => 
+           ({ body: { error: err } }))
+    break
+```
+- `Args extends Record` with `op?: string`
 
 ---
-# <!--!--> Deploying `set` in typescript
-```sh
-cp src/index.d.ts address/packages/addr/crud/src
-cp src/index2.ts address/packages/addr/crud/src/index.ts
-cd address/packages/addr/crud
-npm install --save @types/node
-echo "node_modules">.exclude
-cd ../../../..
-nim project deploy address
-nim action invoke addr/crud -p op set -p name Mike -p company Nimble -p phone 555
-nim kv list
+# `get` and `del`
+```ts
+  case 'get':
+      return db.getAsync(key)
+          .then(reply => 
+             ({ body: { record: JSON.parse(reply) } }))
+          .catch(err => ({ body: { error: err } }))
+      break
+```
+```ts
+  case 'del':
+      return db.delAsync(key)
+          .then(reply => 
+             ({ body: { status: reply.toString() } }))
+          .catch(err => ({ body: { error: err } }))
+      break
 ```
 
 ---
-# `index3.ts`
+## `all`
+```ts
+case 'all':
+    return db.keysAsync("address:*")
+        .then(reply =>  
+         reply.length == 0 
+          ? [] as string[]   
+          : db.mgetAsync(reply))
+        .then(reply => ({body: { data: 
+              reply.map(JSON.parse as (x:string)=> Record) }
+         }))
+        .catch(err => ({ body: { error: err } }))
+```
+- `[] as string[]` 
+- `JSON.parse as (x:string)=> Record`
 
 ---
-# <!--!--> `get/del.ts`:
+# <!--!--> Deploying crud
 ```sh
-cp src/index3.ts address/packages/addr/crud/src/index.ts
+## Deploying Crud
+# prepare crud typescript
+mkdir -p address/packages/addr/crud/src
+cp src/package.json  address/packages/addr/crud/package.json
+cp src/tsconfig.json address/packages/addr/crud/tsconfig.json
+cp src/decl.d.ts      address/packages/addr/crud/src/decl.d.ts
+cp src/index.d.ts     address/packages/addr/crud/src/index.d.ts
+cp src/index.ts       address/packages/addr/crud/src/index.ts
+echo "index.js"     > address/packages/addr/crud/.include
+
+# deploy
+find address/packages/addr/crud
 nim project deploy address
-nim action invoke addr/crud -p op get -p name Mike
-nim action invoke addr/crud -p op del -p name Mike
-nim action invoke addr/crud -p op get -p name Mike
+ls -la address/packages/addr/crud
+# note the index.js has been generated
 ```
 
 ---
-index4
-
----
-# <!--!--> `all.ts`:
+# <!--!--> Testing crud
 ```sh
-cp src/index4.ts address/packages/addr/crud/src/index.ts
-nim project deploy address
+nim kv clean
 nim action invoke addr/crud -p op all
 nim action invoke addr/crud -p op set -p name Michele -p company Nimbella -p phone 392
-nim action invoke addr/crud -p op set -p name Mirella -p company Butterly -p phone 328
+nim action invoke addr/crud -p op get -p name Michele
+nim action invoke addr/crud -p op set -p name Mirella -p company Butterfly -p phone 328
+nim action invoke addr/crud -p op all
+nim action invoke addr/crud -p op del -p name Michele
 nim action invoke addr/crud -p op all
 ```
 
@@ -531,22 +609,10 @@ nim action invoke addr/crud -p op all
 # Create a svelte app
 
 - `npx degit sveltejs/template web`
-uses a template
+it uses a template on GitHub
 - requires some configuration:
   - `project.yml`
   - `web/.include`
-
----
-# <!--!--> Deploy Web Content
-```sh
-cd address
-rm -Rvf web
-npx degit sveltejs/template web
-echo "public" >web/.include
-echo -e "bucket:\n  strip: 1" >project.yml
-cd ..
-nim project deploy address
-```
 
 ---
 # How to use a subfolder
@@ -561,6 +627,23 @@ bucket:
 ```
 public
 ```
+---
+# <!--!--> Setup Svelte
+```sh
+# setup svelte
+cd address
+# create a template
+npx degit sveltejs/template web
+# strip one level
+echo -e "bucket:\n  strip: 1" >project.yml
+cd web
+# enable typescript
+node scripts/setupTypeScript.js 
+# include public
+echo "public" >.include
+cd ../..
+nim project deploy address
+```
 
 ---
 # Svelte is "reactive"
@@ -571,13 +654,17 @@ public
 - `onMount` executed when view ready
 
 ---
-# <!--!--> Load All data
+## <!--!--> Load all data
 ```sh
-<script>
-  // retrieve data
-  let data = []
+<script lang="ts">
+  interface Record {
+    name: string
+    company: string
+    phone: number
+  }
+  let data: Record[] = []
   function all()  {
-      fetch("/api/addr/all")
+      fetch("/api/addr/crud?op=all")
       .then(r => r.json())
       .then(d => data = d)
   }
@@ -585,18 +672,6 @@ public
   import { onMount } from 'svelte'
   onMount(all)
 </script>
-
-<pre>{JSON.stringify(data, null, " ")}</pre>
-```
-
----
-# <!--!--> Deploy and Test v1
-```sh
-# deploy and test
-cp src/App1.svelte address/web/src/App.svelte
-nim project deploy address
-# show
-nim action invoke addr/set -p name Max -p company Gear -p phone 333 
 ```
 
 ---
@@ -630,7 +705,7 @@ nim action invoke addr/set -p name Max -p company Gear -p phone 333
 ```
 
 ---
-# <!--!--> Deploy v2
+# <!--!--> Deploy
 ```sh
 cp src/App2.svelte address/web/src/App.svelte
 nim project deploy address

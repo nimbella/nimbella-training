@@ -1,6 +1,10 @@
-<script>
-  // retrieve data
-  let data = []
+<script lang="ts">
+  interface Record {
+    name: string
+    company: string
+    phone: number
+  }
+  let data: Record[] = []
   function all()  {
       fetch("/api/addr/all")
       .then(r => r.json())
@@ -9,7 +13,4 @@
   // init
   import { onMount } from 'svelte'
   onMount(all)
-
 </script>
-
-<pre>{JSON.stringify(data, null, " ")}</pre>
