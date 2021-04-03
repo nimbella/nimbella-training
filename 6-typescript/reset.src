@@ -1,0 +1,5 @@
+nim auth switch msciabgm-3h6qwxvwpw2
+nim namespace clean 
+nim kv clean
+rm -Rvf address
+export PS1='\$ '
