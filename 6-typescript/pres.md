@@ -9,7 +9,7 @@ backgroundImage: url('https://marp.app/assets/hero-background.jpg')
 
 ![bg left:40% 80%](img/nimbella.png)
 
-# **Lesson 6**
+# **Lesson 6** @ Facile.it
 
 Using Typescript with Nimbella
 
@@ -190,7 +190,8 @@ show logs of an activation
 ```sh
 # Listing Activations
 nim activation list --limit 3
-nim action invoke hello -p name Mike
+date
+nim action invoke hello -p name Rodric
 nim activation list --limit 3
 
 # Displaying logs and results
@@ -332,7 +333,7 @@ curl $(nim action get addr/all --url)
 ```
 
 ---
-# Using Typescript
+# Using TypeScript
 
 - Different solutions:
   - integrated typescript compiler
@@ -348,7 +349,8 @@ curl $(nim action get addr/all --url)
 # <!--!--> hello.ts
 ```ts
 // hello.ts
-export function main(args: {name:string}): {body:string} {
+export function main(args: {name:string})
+: {body:string} {
     let name: string = args.name || 'world'
     let greeting = 'Hello ' + name + '!'
     console.log(greeting)
@@ -357,12 +359,12 @@ export function main(args: {name:string}): {body:string} {
 ```
 
 ---
-# Typescript: Folders and Files
+# TypeScript: Folders and Files
 
 - `address`: project  folder
   - `packages`: backend folder
     - `addr`: package folder
-      - `hello`: action folder
+      - `hellots`: action folder
         - `src`: sources folder
            - `index.ts`: the typescript action
            - `packages.json`: configuration file
@@ -370,20 +372,22 @@ export function main(args: {name:string}): {body:string} {
            - `.include`: list of included files
 
 ---
-# Create a typescript
+# <!--!--> Create a TypeScript action
 ```sh
+## Create a TypeScript action
 # prepare environment
 mkdir -p address/packages/addr/hellots/src
 cp src/hello.ts address/packages/addr/hellots/src/index.ts
 # initializing 
 cd address/packages/addr/hellots
-echo "index.js" >.include
 npm -y init
 tsc --init
-# build and deploy
+# build
 ls -la
 tsc --outDir .
 ls -la
+echo "index.js" >.include
+# deploy
 cd ../../../..
 nim project deploy address
 nim action invoke addr/hellots
@@ -394,9 +398,8 @@ nim action invoke addr/hellots
 - `nim` invokes automatically the build 
   - `npm run build` if exists `package.json`
 - We need:
-  - to add `tsc` in `package.json`
-  - to configure `tsc` in `tsconfig.json`
-
+  - adding a build step `tsc` in `package.json`
+  - configuring `tsc` in `tsconfig.json`
 
 ---
 # `package.json`:
@@ -409,7 +412,7 @@ nim action invoke addr/hellots
   ...
 }
 ```
-- add a build script
+- build command running the typescript compiler
 
 ---
 # `tsconfig.js`:
@@ -421,12 +424,11 @@ nim action invoke addr/hellots
     "outDir": "./",
     "target": "es2015",
     "module": "commonjs",
-    ...
-  }
-}
+} }
 ```
 - include and exclude folders
 - set output directory to root of the action
+- select target version and module system
 
 ---
 # <!--!--> Testing the integration
@@ -442,11 +444,15 @@ nim action invoke addr/hellots
 ```
 
 ---
-# From Javascript to TypeScript
+# From JavaScript to TypeScript
 
-- adding types to the previous example
-   - declare types for input and output
+- adding types to the previous examples
    - declare types for used libraries
+     - `decl.d.ts`
+   - declare types for input and output
+     - `index.d.ts`
+  - use those types in code
+     - `index.ts`
 
 ---
 ### `decls.d.ts`
@@ -477,9 +483,9 @@ import type {Args, Result, Record} from './decl'
 
 function main(args: Args): Promise<{body: Result}>
 ```
-- define `Args`, `Result` and `Record`
 - type declarations for `@nimbella/sdk`
-
+- define `Args`, `Result` and `Record`
+- input and output types
 
 ---
 ## Declare module for `@nimbella.sdk`
@@ -615,19 +621,6 @@ it uses a template on GitHub
   - `web/.include`
 
 ---
-# How to use a subfolder
-
-- `project.yml` (strip one level):
-```
-bucket:
-  strip: 1
-```
-
-- `web/.include` (pick the subfolder `public`):
-```
-public
-```
----
 # <!--!--> Setup Svelte
 ```sh
 # setup svelte
@@ -646,11 +639,25 @@ nim project deploy address
 ```
 
 ---
+# How to use a subfolder
+
+- `project.yml` (strip one level):
+```
+bucket:
+  strip: 1
+```
+
+- `web/.include` (pick the subfolder `public`):
+```
+public
+```
+
+---
 # Svelte is "reactive"
-- declare: `let data = ""`
-- use: `{data}`
-- assign: `data = "hello"` 
-  - triggers view update
+- declare: `let data: Record[] = []`
+- assign: `data = []` 
+  - triggering update view
+    - templates are re-evaluated
 - `onMount` executed when view ready
 
 ---
@@ -674,12 +681,12 @@ nim project deploy address
 
 ---
 # Svelte templates
-  - reactive
-    - just update variable
+  - Reactive:
+    - just update variables to re-evaluate
   - `{#each data as row}`
-    - iterates array assigning to row
-  - `{row.name}`
-    - render value
+    - iterates array assigning elements to `row`
+    - `{row.name}`
+      - renders value
   - `{/each}`
     - closes block
 
@@ -767,16 +774,17 @@ nim project deploy address
 ```ts
   let select: string;
   function remove() {
-    fetch("/api/addr/crud?op=del&name=" + select).then(all);
+    fetch("/api/addr/crud?op=del&name=" + select)
+    .then(all);
   }
 ```
 
 ---
-# Remove Changes
+## Remove (changes)
 ```html
  <table>
     <tr>
-+     <th></th
++     <th></th>
       <th>Name</th>
 ...
       <tr>
