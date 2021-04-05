@@ -478,10 +478,3 @@ nim rule create ticker-tick ticker slack/tick
 nim rule enable ticker-tick
 ```
 
----
-# Exercise for certification
-
-- create a web site monitor
-  - checks if a site is up and running
-  - notifies in slack if something is wrong
-  - it is executed every minute
