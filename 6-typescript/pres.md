@@ -361,15 +361,15 @@ export function main(args: {name:string})
 ---
 # TypeScript: Folders and Files
 
-- `address`: project  folder
-  - `packages`: backend folder
-    - `addr`: package folder
-      - `hellots`: action folder
-        - `src`: sources folder
+- `address/`: project  folder
+  - `packages/`: backend folder
+    - `addr/`: package folder
+      - `hellots/`: action folder
+        - `packages.json`: configuration file
+        - `tsconfig.ts`: compiler file
+        - `.include`: list of included files
+        - `src/`: sources folder
            - `index.ts`: the typescript action
-           - `packages.json`: configuration file
-           - `tsconfig.ts`: compiler file
-           - `.include`: list of included files
 
 ---
 # <!--!--> Create a TypeScript action
