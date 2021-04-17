@@ -5,4 +5,5 @@
 1. Web Applications: [video-ita](https://youtu.be/CeYhwBwKg4k) [pdf](3-webapp/pres.pdf) [slides](3-webapp/pres) 
 1. Redis & Test: [video-ita](https://youtu.be/lrRGbeg5flM) [pdf](4-test/pres.pdf) [slides](4-test/pres) 
 1. Python: [video-ita](https://youtu.be/Uax16DE4K9w) [pdf](5-python/pres.pdf) [slides](5-python/pres) 
-1. TypeScript: [pdf](6-typescript/pres.pdf) [slides](6-typescript/pres) 
+1. TypeScript: [video-ita](https://youtu.be/1Nf7Q_wm93M)
+ [pdf](6-typescript/pres.pdf) [slides](6-typescript/pres) 
